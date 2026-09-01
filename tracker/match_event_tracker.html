@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Match Event Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --pitch: #1e5631;
+    --pitch-line: #eef4ea;
+    --page-bg: #f6f4ee;
+    --panel-bg: #ffffff;
+    --ink: #1a1d18;
+    --ink-soft: #5c6158;
+    --accent: #c98a1f;
+    --accent-ink: #3d2b06;
+    --border: #dedad0;
+    --danger: #b3432f;
+    --good: #2f6b45;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--page-bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding:28px 20px 60px;
+  }
+  h1,h2,h3{font-family:'Manrope',sans-serif;margin:0;}
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  header.top{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:20px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+  }
+  header.top h1{font-size:26px;font-weight:800;letter-spacing:-0.01em;}
+  header.top .tag{color:var(--ink-soft);font-size:14px;}
+
+  .game-meta{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:22px;
+  }
+  .game-meta .field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px;}
+  .game-meta label{font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .game-meta input, .game-meta select{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 9px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fdfcfa;
+  }
+
+  .main-grid{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width: 900px){
+    .main-grid{grid-template-columns:1fr;}
+  }
+
+  .pitch-panel{
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px;
+    position:sticky;
+    top:20px;
+  }
+  .pitch-panel h3{font-size:15px;margin-bottom:10px;}
+  .pitch-hint{font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
+  svg#pitch{
+    width:100%;
+    height:auto;
+    border-radius:6px;
+    cursor:crosshair;
+    display:block;
+  }
+  .marker-status{
+    margin-top:10px;
+    font-size:13px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    color:var(--ink-soft);
+  }
+  .marker-status strong{color:var(--ink);}
+  .clear-marker{
+    background:none;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:5px 10px;
+    font-size:12px;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .clear-marker:hover{border-color:var(--danger);color:var(--danger);}
+
+  .form-panel{
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px 20px 20px;
+  }
+  .form-panel h3{font-size:15px;margin-bottom:14px;}
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px 14px;
+  }
+  .form-grid .full{grid-column:1 / -1;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .field select, .field input{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 9px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fdfcfa;
+  }
+  .shot-fields{
+    display:none;
+    grid-column:1 / -1;
+    border-top:1px dashed var(--border);
+    margin-top:6px;
+    padding-top:14px;
+  }
+  .shot-fields .form-grid{margin:0;}
+  .shot-fields-inner-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent-ink);
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    margin-bottom:10px;
+  }
+
+  .log-btn{
+    margin-top:16px;
+    width:100%;
+    background:var(--accent);
+    color:var(--accent-ink);
+    border:none;
+    border-radius:8px;
+    padding:12px;
+    font-size:15px;
+    font-weight:700;
+    font-family:'Manrope',sans-serif;
+    cursor:pointer;
+  }
+  .log-btn:hover{filter:brightness(0.95);}
+  .log-btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .form-note{font-size:12px;color:var(--ink-soft);margin-top:8px;text-align:center;}
+
+  .table-section{margin-top:26px;}
+  .table-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .table-header h3{font-size:16px;}
+  .count-pill{
+    font-size:12px;
+    color:var(--ink-soft);
+    background:#efece2;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-left:8px;
+  }
+  .export-btn{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:9px 16px;
+    font-size:13px;
+    font-weight:600;
+    font-family:'Manrope',sans-serif;
+    cursor:pointer;
+  }
+  .export-btn:hover{filter:brightness(1.15);}
+  .export-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .table-scroll{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:var(--panel-bg);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    min-width:920px;
+  }
+  th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    color:var(--ink-soft);
+    padding:10px 10px;
+    border-bottom:1px solid var(--border);
+    background:#faf9f5;
+    white-space:nowrap;
+  }
+  td{
+    padding:9px 10px;
+    border-bottom:1px solid #eeece4;
+    white-space:nowrap;
+  }
+  tr:last-child td{border-bottom:none;}
+  .del-btn{
+    background:none;
+    border:none;
+    color:var(--danger);
+    cursor:pointer;
+    font-size:12px;
+    font-weight:600;
+  }
+  .del-btn:hover{text-decoration:underline;}
+  .empty-row td{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:30px 10px;
+    white-space:normal;
+  }
+  .tag-shot{color:var(--danger);font-weight:600;}
+  .tag-goal{color:var(--good);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Match Event Tracker</h1>
+    <div class="tag">Click the pitch to place an event, fill in the details, log it.</div>
+  </header>
+
+  <div class="game-meta">
+    <div class="field">
+      <label for="opponent">Opponent</label>
+      <input type="text" id="opponent" placeholder="e.g. Lincoln High">
+    </div>
+    <div class="field">
+      <label for="gameDate">Date</label>
+      <input type="date" id="gameDate">
+    </div>
+    <div class="field">
+      <label for="half">Half</label>
+      <select id="half">
+        <option value="1">1st Half</option>
+        <option value="2">2nd Half</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="clockReading">Clock shows (mm:ss, counting down)</label>
+      <input type="text" id="clockReading" placeholder="e.g. 27:45">
+    </div>
+    <div class="field">
+      <label for="minute">Minute elapsed (auto-filled)</label>
+      <input type="number" id="minute" min="0" max="100" placeholder="0">
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <div class="pitch-panel">
+      <h3>Pitch — click to mark location</h3>
+      <div class="pitch-hint">Attacking direction is always left → right, both halves.</div>
+      <svg id="pitch" viewBox="0 0 105 68" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="105" height="68" fill="#1e5631"/>
+        <rect x="0.4" y="0.4" width="104.2" height="67.2" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <line x1="52.5" y1="0.4" x2="52.5" y2="67.6" stroke="#eef4ea" stroke-width="0.35"/>
+        <circle cx="52.5" cy="34" r="9.15" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <circle cx="52.5" cy="34" r="0.5" fill="#eef4ea"/>
+        <!-- left penalty area (16.5m deep, 40.32m wide) -->
+        <rect x="0.4" y="13.84" width="16.1" height="40.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <!-- left six-yard box (5.5m deep, 18.32m wide) -->
+        <rect x="0.4" y="24.84" width="5.1" height="18.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <circle cx="11" cy="34" r="0.5" fill="#eef4ea"/>
+        <path d="M 16.5 25.5 A 9.15 9.15 0 0 1 16.5 42.5" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <!-- right penalty area -->
+        <rect x="88.5" y="13.84" width="16.1" height="40.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <!-- right six-yard box -->
+        <rect x="99.5" y="24.84" width="5.1" height="18.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <circle cx="94" cy="34" r="0.5" fill="#eef4ea"/>
+        <path d="M 88.5 42.5 A 9.15 9.15 0 0 1 88.5 25.5" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <!-- goals -->
+        <rect x="-1.2" y="30.34" width="1.2" height="7.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <rect x="105" y="30.34" width="1.2" height="7.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <g id="markerGroup" style="display:none;">
+          <circle id="markerDot" cx="0" cy="0" r="1.1" fill="#c98a1f" stroke="#3d2b06" stroke-width="0.35"/>
+        </g>
+      </svg>
+      <div class="marker-status">
+        <span>Location: <strong id="coordDisplay">not set</strong> <span style="font-weight:400;">(meters, 105×68 pitch)</span></span>
+        <button class="clear-marker" id="clearMarker" type="button">Clear</button>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <h3>Event details</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label for="team">Team</label>
+          <select id="team">
+            <option value="Home">Home (us)</option>
+            <option value="Away">Away (opponent)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="player">Player #</label>
+          <input type="text" id="player" placeholder="e.g. 7">
+        </div>
+        <div class="field full">
+          <label for="eventType">Event type</label>
+          <select id="eventType">
+            <option value="Pass">Pass</option>
+            <option value="Shot">Shot</option>
+            <option value="Dribble/Carry">Dribble / Carry</option>
+            <option value="Cross">Cross</option>
+            <option value="Tackle">Tackle</option>
+            <option value="Interception">Interception</option>
+            <option value="Clearance">Clearance</option>
+            <option value="Save">Save</option>
+            <option value="Foul">Foul</option>
+            <option value="Corner">Corner</option>
+            <option value="Throw-in">Throw-in</option>
+            <option value="Goal Kick">Goal Kick</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="outcome">Outcome</label>
+          <select id="outcome"></select>
+        </div>
+        <div class="field">
+          <label for="secondPlayer">2nd player # <span style="font-weight:400;">(optional)</span></label>
+          <input type="text" id="secondPlayer" placeholder="receiver / tackler / etc.">
+        </div>
+
+        <div class="shot-fields" id="shotFields">
+          <div class="shot-fields-inner-label">Shot detail</div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="bodyPart">Body part</label>
+              <select id="bodyPart">
+                <option>Right Foot</option>
+                <option>Left Foot</option>
+                <option>Head</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="shotType">Shot type</label>
+              <select id="shotType">
+                <option>Open Play</option>
+                <option>Free Kick</option>
+                <option>Penalty</option>
+                <option>Corner</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="assistType">Assist type</label>
+              <select id="assistType">
+                <option>None</option>
+                <option>Through Ball</option>
+                <option>Cross</option>
+                <option>Cutback</option>
+                <option>Rebound</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="pressure">Defensive pressure</label>
+              <select id="pressure">
+                <option>None</option>
+                <option>Some</option>
+                <option>Heavy</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="log-btn" id="logBtn" type="button" disabled>Log event</button>
+      <div class="form-note" id="formNote">Click a spot on the pitch to enable logging.</div>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <div class="table-header">
+      <h3>Logged events <span class="count-pill" id="countPill">0</span></h3>
+      <button class="export-btn" id="exportBtn" disabled>Export CSV</button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Half</th><th>Min</th><th>Team</th><th>Player</th>
+            <th>Event</th><th>Outcome</th><th>2nd Plyr</th><th>X</th><th>Y</th>
+            <th>Body Part</th><th>Shot Type</th><th>Assist</th><th>Pressure</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="eventTableBody">
+          <tr class="empty-row"><td colspan="15">No events logged yet — click the pitch and fill in the form to add your first one.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const outcomeOptions = {
+    "Shot": ["Goal","Saved","Blocked","Off Target"],
+    "Pass": ["Successful","Unsuccessful"],
+    "Cross": ["Successful","Unsuccessful"],
+    "Dribble/Carry": ["Successful","Unsuccessful"],
+    "Tackle": ["Won","Lost"],
+    "Interception": ["Successful"],
+    "Clearance": ["Successful","Unsuccessful"],
+    "Save": ["Held","Parried","Punched"],
+    "Foul": ["Committed","Won"],
+    "Corner": ["Successful","Unsuccessful"],
+    "Throw-in": ["Successful","Unsuccessful"],
+    "Goal Kick": ["Successful","Unsuccessful"]
+  };
+
+  const eventTypeEl = document.getElementById('eventType');
+  const outcomeEl = document.getElementById('outcome');
+  const shotFields = document.getElementById('shotFields');
+  const svg = document.getElementById('pitch');
+  const markerGroup = document.getElementById('markerGroup');
+  const markerDot = document.getElementById('markerDot');
+  const coordDisplay = document.getElementById('coordDisplay');
+  const logBtn = document.getElementById('logBtn');
+  const formNote = document.getElementById('formNote');
+  const exportBtn = document.getElementById('exportBtn');
+  const countPill = document.getElementById('countPill');
+  const tableBody = document.getElementById('eventTableBody');
+
+  let currentCoord = null; // {x, y} in 0-100 scale
+  let events = []; // in-memory log
+  let idCounter = 1;
+
+  function refreshOutcomeOptions(){
+    const type = eventTypeEl.value;
+    const opts = outcomeOptions[type] || ["Successful","Unsuccessful"];
+    outcomeEl.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
+    shotFields.style.display = (type === "Shot") ? "block" : "none";
+  }
+  eventTypeEl.addEventListener('change', refreshOutcomeOptions);
+  refreshOutcomeOptions();
+
+  function updateLogButtonState(){
+    logBtn.disabled = !currentCoord;
+    formNote.textContent = currentCoord
+      ? "Ready — fill in details above, then log the event."
+      : "Click a spot on the pitch to enable logging.";
+  }
+
+  svg.addEventListener('click', function(e){
+    const rect = svg.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    const relY = (e.clientY - rect.top) / rect.height;
+    const x = Math.round(relX * 105 * 10) / 10;
+    const y = Math.round(relY * 68 * 10) / 10;
+    currentCoord = {x, y};
+    markerGroup.style.display = "block";
+    markerDot.setAttribute('cx', x.toFixed(1));
+    markerDot.setAttribute('cy', y.toFixed(1));
+    coordDisplay.textContent = `x:${x}m, y:${y}m`;
+    updateLogButtonState();
+  });
+
+  document.getElementById('clearMarker').addEventListener('click', function(){
+    currentCoord = null;
+    markerGroup.style.display = "none";
+    coordDisplay.textContent = "not set";
+    updateLogButtonState();
+  });
+
+  function fieldVal(id){ return document.getElementById(id).value.trim(); }
+
+  logBtn.addEventListener('click', function(){
+    if(!currentCoord) return;
+    const type = eventTypeEl.value;
+    const isShot = type === "Shot";
+    const row = {
+      id: idCounter++,
+      opponent: fieldVal('opponent'),
+      date: fieldVal('gameDate'),
+      half: fieldVal('half'),
+      minute: fieldVal('minute'),
+      team: fieldVal('team'),
+      player: fieldVal('player'),
+      eventType: type,
+      outcome: outcomeEl.value,
+      secondPlayer: fieldVal('secondPlayer'),
+      x: currentCoord.x,
+      y: currentCoord.y,
+      bodyPart: isShot ? fieldVal('bodyPart') : "",
+      shotType: isShot ? fieldVal('shotType') : "",
+      assistType: isShot ? fieldVal('assistType') : "",
+      pressure: isShot ? fieldVal('pressure') : ""
+    };
+    events.push(row);
+    renderTable();
+
+    // reset only location + player + 2nd player; keep team/event type/half for fast repeat logging
+    currentCoord = null;
+    markerGroup.style.display = "none";
+    coordDisplay.textContent = "not set";
+    document.getElementById('player').value = "";
+    document.getElementById('secondPlayer').value = "";
+    updateLogButtonState();
+  });
+
+  function renderTable(){
+    countPill.textContent = events.length;
+    exportBtn.disabled = events.length === 0;
+    if(events.length === 0){
+      tableBody.innerHTML = `<tr class="empty-row"><td colspan="15">No events logged yet — click the pitch and fill in the form to add your first one.</td></tr>`;
+      return;
+    }
+    tableBody.innerHTML = events.map((ev, i) => {
+      const outcomeClass = ev.outcome === "Goal" ? "tag-goal" : (ev.eventType === "Shot" ? "tag-shot" : "");
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${ev.half}</td>
+        <td>${ev.minute}</td>
+        <td>${ev.team}</td>
+        <td>${ev.player}</td>
+        <td>${ev.eventType}</td>
+        <td class="${outcomeClass}">${ev.outcome}</td>
+        <td>${ev.secondPlayer}</td>
+        <td>${ev.x}</td>
+        <td>${ev.y}</td>
+        <td>${ev.bodyPart}</td>
+        <td>${ev.shotType}</td>
+        <td>${ev.assistType}</td>
+        <td>${ev.pressure}</td>
+        <td><button class="del-btn" data-id="${ev.id}">Remove</button></td>
+      </tr>`;
+    }).join('');
+
+    tableBody.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', function(){
+        const id = parseInt(this.getAttribute('data-id'));
+        events = events.filter(ev => ev.id !== id);
+        renderTable();
+      });
+    });
+  }
+
+  function toCSVValue(v){
+    const s = (v === undefined || v === null) ? "" : String(v);
+    if(s.includes(',') || s.includes('"') || s.includes('\n')){
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  exportBtn.addEventListener('click', function(){
+    const headers = ["opponent","date","half","minute","team","player","eventType","outcome","secondPlayer","x","y","bodyPart","shotType","assistType","pressure"];
+    const lines = [headers.join(',')];
+    events.forEach(ev => {
+      lines.push(headers.map(h => toCSVValue(ev[h])).join(','));
+    });
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const opp = fieldVal('opponent').replace(/[^a-z0-9]/gi, '_') || 'game';
+    const dt = fieldVal('gameDate') || 'undated';
+    a.href = url;
+    a.download = `match_events_${opp}_${dt}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  updateLogButtonState();
+</script>
+</body>
+</html>
