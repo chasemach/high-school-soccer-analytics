@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Match Event Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --pitch: #1e5631;
+    --pitch-line: #eef4ea;
+    --page-bg: #f6f4ee;
+    --panel-bg: #ffffff;
+    --ink: #1a1d18;
+    --ink-soft: #5c6158;
+    --accent: #c98a1f;
+    --accent-ink: #3d2b06;
+    --border: #dedad0;
+    --danger: #b3432f;
+    --good: #2f6b45;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--page-bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding:28px 20px 60px;
+  }
+  h1,h2,h3{font-family:'Manrope',sans-serif;margin:0;}
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  header.top{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:20px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+  }
+  header.top h1{font-size:26px;font-weight:800;letter-spacing:-0.01em;}
+  header.top .tag{color:var(--ink-soft);font-size:14px;}
+
+  .game-meta{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:22px;
+  }
+  .game-meta .field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px;}
+  .game-meta label{font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .game-meta input, .game-meta select{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 9px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fdfcfa;
+  }
+
+  .lineup-panel{
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:22px;
+  }
+  .lineup-panel label{font-size:12px;color:var(--ink-soft);font-weight:600;display:block;margin-bottom:6px;}
+  .lineup-panel .row{display:flex;gap:8px;flex-wrap:wrap;}
+  .lineup-panel input{
+    flex:1;
+    min-width:220px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 9px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fdfcfa;
+  }
+  .lineup-panel .btn-inline{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    padding:8px 16px;
+    font-size:13px;
+    font-weight:600;
+    font-family:'Manrope',sans-serif;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .lineup-panel .btn-inline:hover{filter:brightness(1.15);}
+  .on-field-note{font-size:12px;color:var(--ink-soft);margin-top:8px;}
+  .on-field-note strong{color:var(--ink);}
+
+  .main-grid{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width: 900px){
+    .main-grid{grid-template-columns:1fr;}
+  }
+
+  .pitch-panel{
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px;
+    position:sticky;
+    top:20px;
+  }
+  .pitch-panel h3{font-size:15px;margin-bottom:10px;}
+  .pitch-hint{font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
+  svg#pitch{
+    width:100%;
+    height:auto;
+    border-radius:6px;
+    cursor:crosshair;
+    display:block;
+  }
+  .marker-status{
+    margin-top:10px;
+    font-size:13px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    color:var(--ink-soft);
+  }
+  .marker-status strong{color:var(--ink);}
+  .shot-click-hint{
+    font-size:12px;
+    font-weight:600;
+    color:var(--accent-ink);
+    background:#fdf3e3;
+    border:1px solid #e8cf9c;
+    border-radius:6px;
+    padding:7px 10px;
+    margin-top:10px;
+  }
+  .clear-marker{
+    background:none;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:5px 10px;
+    font-size:12px;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .clear-marker:hover{border-color:var(--danger);color:var(--danger);}
+
+  .form-panel{
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px 20px 20px;
+  }
+  .form-panel h3{font-size:15px;margin-bottom:14px;}
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px 14px;
+  }
+  .form-grid .full{grid-column:1 / -1;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .field select, .field input{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 9px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fdfcfa;
+  }
+  .shot-fields{
+    display:none;
+    grid-column:1 / -1;
+    border-top:1px dashed var(--border);
+    margin-top:6px;
+    padding-top:14px;
+  }
+  .shot-fields .form-grid{margin:0;}
+  .shot-fields-inner-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent-ink);
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    margin-bottom:10px;
+  }
+  .placement-block{
+    grid-column:1 / -1;
+    margin-top:16px;
+    border-top:1px dashed var(--border);
+    padding-top:14px;
+  }
+  .placement-block label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
+  #goalGrid{
+    width:220px;
+    max-width:100%;
+    height:auto;
+    display:block;
+    cursor:pointer;
+    border-radius:6px;
+  }
+  .miss-zone{cursor:pointer;}
+  .placement-status{
+    margin-top:8px;
+    font-size:13px;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .placement-status strong{color:var(--ink);}
+
+  .log-btn{
+    margin-top:16px;
+    width:100%;
+    background:var(--accent);
+    color:var(--accent-ink);
+    border:none;
+    border-radius:8px;
+    padding:12px;
+    font-size:15px;
+    font-weight:700;
+    font-family:'Manrope',sans-serif;
+    cursor:pointer;
+  }
+  .log-btn:hover{filter:brightness(0.95);}
+  .log-btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .form-note{font-size:12px;color:var(--ink-soft);margin-top:8px;text-align:center;}
+
+  .table-section{margin-top:26px;}
+  .table-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .table-header h3{font-size:16px;}
+  .count-pill{
+    font-size:12px;
+    color:var(--ink-soft);
+    background:#efece2;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-left:8px;
+  }
+  .export-btn{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:9px 16px;
+    font-size:13px;
+    font-weight:600;
+    font-family:'Manrope',sans-serif;
+    cursor:pointer;
+  }
+  .export-btn:hover{filter:brightness(1.15);}
+  .export-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .table-scroll{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:var(--panel-bg);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    min-width:920px;
+  }
+  th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    color:var(--ink-soft);
+    padding:10px 10px;
+    border-bottom:1px solid var(--border);
+    background:#faf9f5;
+    white-space:nowrap;
+  }
+  td{
+    padding:9px 10px;
+    border-bottom:1px solid #eeece4;
+    white-space:nowrap;
+  }
+  tr:last-child td{border-bottom:none;}
+  .del-btn{
+    background:none;
+    border:none;
+    color:var(--danger);
+    cursor:pointer;
+    font-size:12px;
+    font-weight:600;
+  }
+  .del-btn:hover{text-decoration:underline;}
+  .empty-row td{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:30px 10px;
+    white-space:normal;
+  }
+  .tag-shot{color:var(--danger);font-weight:600;}
+  .tag-yellow{color:#a7781a;font-weight:700;}
+  .tag-red{color:var(--danger);font-weight:700;}
+  .on-field-note strong.men-warn{color:var(--danger);}
+  .tag-goal{color:var(--good);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Match Event Tracker</h1>
+    <div class="tag">Click the pitch to place an event, fill in the details, log it.</div>
+  </header>
+
+  <div class="game-meta">
+    <div class="field">
+      <label for="opponent">Opponent</label>
+      <input type="text" id="opponent" placeholder="e.g. Lincoln High">
+    </div>
+    <div class="field">
+      <label for="gameDate">Date</label>
+      <input type="date" id="gameDate">
+    </div>
+    <div class="field">
+      <label for="half">Half</label>
+      <select id="half">
+        <option value="1">1st Half</option>
+        <option value="2">2nd Half</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="attackDirection">We're attacking...</label>
+      <select id="attackDirection">
+        <option value="right">→ toward screen right</option>
+        <option value="left">← toward screen left</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="clockReading">Clock shows (mm:ss, counting down)</label>
+      <input type="text" id="clockReading" placeholder="e.g. 27:45">
+    </div>
+    <div class="field">
+      <label for="minute">Minute elapsed (auto-filled)</label>
+      <input type="number" id="minute" min="0" max="100" placeholder="0">
+    </div>
+  </div>
+
+  <div class="lineup-panel">
+    <label for="startingXIInput">Starting XI — set once before tagging begins</label>
+    <div class="row">
+      <input type="text" id="startingXIInput" placeholder="Comma-separated jersey #s, e.g. 0,3,5,6,8,9,10,11,12,15,18">
+      <button type="button" class="btn-inline" id="addStartingXIBtn">Set Starting XI</button>
+    </div>
+    <div class="on-field-note">Logs each as on the field at 0:00. Currently on field: <strong id="onFieldDisplay">none set</strong></div>
+    <div class="on-field-note">Men on field: <strong id="menOnField">Us 11 · Them 11</strong> <span style="font-weight:400;">(drops when a red card or second yellow is logged)</span></div>
+    <div class="on-field-note">For in-game subs, use the event form on the right: pick <strong>Substitution</strong> as the event type, "Player OFF #" and "Player ON #", and the minute — no pitch click needed.</div>
+    <div class="on-field-note">For cards, pick <strong>Card</strong> (press Y), then the outcome: <strong>1</strong> Yellow, <strong>2</strong> Second Yellow (sent off), <strong>3</strong> Red (sent off). Team = whoever got the card. Sent-off cards need the minute (use the clock box above); no pitch click needed.</div>
+  </div>
+
+  <div class="main-grid">
+
+    <div class="pitch-panel">
+      <h3>Pitch — click to mark location</h3>
+      <div class="pitch-hint">Click where the action happened on screen — no need to flip or invert your video. <span id="directionIndicator" style="font-weight:700;color:var(--accent-ink);">Your team attacks: → (left to right)</span></div>
+      <svg id="pitch" viewBox="0 0 105 68" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="105" height="68" fill="#1e5631"/>
+        <rect x="0.4" y="0.4" width="104.2" height="67.2" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <line x1="52.5" y1="0.4" x2="52.5" y2="67.6" stroke="#eef4ea" stroke-width="0.35"/>
+        <circle cx="52.5" cy="34" r="9.15" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <circle cx="52.5" cy="34" r="0.5" fill="#eef4ea"/>
+        <!-- left penalty area (16.5m deep, 40.32m wide) -->
+        <rect x="0.4" y="13.84" width="16.1" height="40.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <!-- left six-yard box (5.5m deep, 18.32m wide) -->
+        <rect x="0.4" y="24.84" width="5.1" height="18.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <circle cx="11" cy="34" r="0.5" fill="#eef4ea"/>
+        <path d="M 16.5 25.5 A 9.15 9.15 0 0 1 16.5 42.5" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <!-- right penalty area -->
+        <rect x="88.5" y="13.84" width="16.1" height="40.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <!-- right six-yard box -->
+        <rect x="99.5" y="24.84" width="5.1" height="18.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <circle cx="94" cy="34" r="0.5" fill="#eef4ea"/>
+        <path d="M 88.5 42.5 A 9.15 9.15 0 0 1 88.5 25.5" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <!-- goals -->
+        <rect x="-1.2" y="30.34" width="1.2" height="7.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <rect x="105" y="30.34" width="1.2" height="7.32" fill="none" stroke="#eef4ea" stroke-width="0.35"/>
+        <g id="markerGroup" style="display:none;">
+          <circle id="markerDot" cx="0" cy="0" r="1.1" fill="#c98a1f" stroke="#3d2b06" stroke-width="0.35"/>
+        </g>
+        <g id="shotEndGroup" style="display:none;">
+          <line id="shotTrajectoryLine" x1="0" y1="0" x2="0" y2="0" stroke="#b3432f" stroke-width="0.45" stroke-dasharray="1.8,1.2"/>
+          <circle id="shotEndDot" cx="0" cy="0" r="1.0" fill="#fff" stroke="#b3432f" stroke-width="0.5"/>
+        </g>
+      </svg>
+      <div class="marker-status">
+        <span>Location: <strong id="coordDisplay">not set</strong> <span style="font-weight:400;">(meters, 105×68 pitch)</span></span>
+        <button class="clear-marker" id="clearMarker" type="button">Clear</button>
+      </div>
+      <div class="shot-click-hint" id="shotClickHint" style="display:none;"></div>
+    </div>
+
+    <div class="form-panel">
+      <h3>Event details</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label for="team">Team</label>
+          <select id="team">
+            <option value="Home">Home (us)</option>
+            <option value="Away">Away (opponent)</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="eventType">Event type</label>
+          <select id="eventType">
+            <option value="Pass">Pass (P)</option>
+            <option value="Shot">Shot (S)</option>
+            <option value="Dribble/Carry">Dribble / Carry (D)</option>
+            <option value="Cross">Cross (C)</option>
+            <option value="Tackle">Tackle (T)</option>
+            <option value="Interception">Interception (I)</option>
+            <option value="Clearance">Clearance (L)</option>
+            <option value="Save">Save (V)</option>
+            <option value="Foul">Foul (F)</option>
+            <option value="Corner">Corner (R)</option>
+            <option value="Throw-in">Throw-in (H)</option>
+            <option value="Goal Kick">Goal Kick (K)</option>
+            <option value="Substitution">Substitution (U)</option>
+            <option value="Card">Card (Y)</option>
+          </select>
+        </div>
+        <div class="field" id="outcomeField">
+          <label for="outcome" id="outcomeLabel">Outcome</label>
+          <select id="outcome"></select>
+        </div>
+        <div class="field">
+          <label for="player" id="playerLabel">Player #</label>
+          <input type="text" id="player" placeholder="e.g. 7">
+        </div>
+        <div class="field">
+          <label for="secondPlayer" id="secondPlayerLabel">2nd player # <span style="font-weight:400;">(optional)</span></label>
+          <input type="text" id="secondPlayer" placeholder="receiver / tackler / etc.">
+        </div>
+
+        <div class="shot-fields" id="shotFields">
+          <div class="shot-fields-inner-label">Shot detail</div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="bodyPart">Body part</label>
+              <select id="bodyPart">
+                <option>Right Foot</option>
+                <option>Left Foot</option>
+                <option>Head</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="shotType">Shot type</label>
+              <select id="shotType">
+                <option>Open Play</option>
+                <option>Free Kick</option>
+                <option>Penalty</option>
+                <option>Corner</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="assistType">Assist type</label>
+              <select id="assistType">
+                <option>None</option>
+                <option>Through Ball</option>
+                <option>Cross</option>
+                <option>Cutback</option>
+                <option>Rebound</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="pressure">Defensive pressure</label>
+              <select id="pressure">
+                <option>None</option>
+                <option>Some</option>
+                <option>Heavy</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="placement-block">
+            <label>Shot placement <span style="font-weight:400;">(optional — click where it ended up)</span></label>
+            <svg id="goalGrid" viewBox="0 0 140 95" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="0" width="140" height="95" fill="#dce8f2" rx="4"/>
+              <!-- miss zones -->
+              <rect id="zoneWideLeft" class="miss-zone" x="0" y="0" width="20" height="95" fill="#b3432f" opacity="0.12"/>
+              <rect id="zoneWideRight" class="miss-zone" x="120" y="0" width="20" height="95" fill="#b3432f" opacity="0.12"/>
+              <rect id="zoneOver" class="miss-zone" x="20" y="0" width="100" height="25" fill="#b3432f" opacity="0.12"/>
+              <text x="10" y="50" font-size="7" fill="#7a2d1e" text-anchor="middle" transform="rotate(-90 10 50)">WIDE</text>
+              <text x="130" y="50" font-size="7" fill="#7a2d1e" text-anchor="middle" transform="rotate(90 130 50)">WIDE</text>
+              <text x="70" y="14" font-size="7" fill="#7a2d1e" text-anchor="middle">OVER</text>
+              <!-- goal frame -->
+              <rect x="20" y="25" width="100" height="70" fill="#fbfbf9" stroke="#1a1d18" stroke-width="2.5"/>
+              <line x1="53.3" y1="25" x2="53.3" y2="95" stroke="#c7c7bd" stroke-width="1" stroke-dasharray="2,2"/>
+              <line x1="86.7" y1="25" x2="86.7" y2="95" stroke="#c7c7bd" stroke-width="1" stroke-dasharray="2,2"/>
+              <line x1="20" y1="48.3" x2="120" y2="48.3" stroke="#c7c7bd" stroke-width="1" stroke-dasharray="2,2"/>
+              <line x1="20" y1="71.7" x2="120" y2="71.7" stroke="#c7c7bd" stroke-width="1" stroke-dasharray="2,2"/>
+              <g id="placementHighlight" style="display:none;">
+                <rect id="placementHighlightRect" fill="#c98a1f" opacity="0.45"/>
+              </g>
+            </svg>
+            <div class="placement-status">
+              Selected: <strong id="placementDisplay">not set</strong>
+              <button class="clear-marker" id="clearPlacement" type="button">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="log-btn" id="logBtn" type="button" disabled>Log event</button>
+      <div class="form-note" id="formNote">Click a spot on the pitch to enable logging.</div>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <div class="table-header">
+      <h3>Logged events <span class="count-pill" id="countPill">0</span></h3>
+      <button class="export-btn" id="exportBtn" disabled>Export CSV</button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Half</th><th>Min</th><th>Team</th><th>Player</th>
+            <th>Event</th><th>Outcome</th><th>2nd Plyr</th><th>X</th><th>Y</th>
+            <th>End X</th><th>End Y</th><th>Placement</th>
+            <th>Body Part</th><th>Shot Type</th><th>Assist</th><th>Pressure</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="eventTableBody">
+          <tr class="empty-row"><td colspan="18">No events logged yet — click the pitch and fill in the form to add your first one.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const outcomeOptions = {
+    "Shot": ["Goal","Saved","Blocked","Off Target"],
+    "Pass": ["Successful","Unsuccessful"],
+    "Cross": ["Successful","Unsuccessful"],
+    "Dribble/Carry": ["Successful","Unsuccessful"],
+    "Tackle": ["Won","Lost"],
+    "Interception": ["Successful"],
+    "Clearance": ["Successful","Unsuccessful"],
+    "Save": ["Held","Parried","Punched"],
+    "Foul": ["Committed","Won"],
+    "Corner": ["Successful","Unsuccessful"],
+    "Throw-in": ["Successful","Unsuccessful"],
+    "Goal Kick": ["Successful","Unsuccessful"],
+    "Card": ["Yellow","Second Yellow","Red"]
+  };
+
+  const eventTypeEl = document.getElementById('eventType');
+  const outcomeEl = document.getElementById('outcome');
+  const outcomeField = document.getElementById('outcomeField');
+  const playerLabel = document.getElementById('playerLabel');
+  const secondPlayerLabel = document.getElementById('secondPlayerLabel');
+  const playerInput = document.getElementById('player');
+  const secondPlayerInput = document.getElementById('secondPlayer');
+  const shotFields = document.getElementById('shotFields');
+  const svg = document.getElementById('pitch');
+  const markerGroup = document.getElementById('markerGroup');
+  const markerDot = document.getElementById('markerDot');
+  const shotEndGroup = document.getElementById('shotEndGroup');
+  const shotTrajectoryLine = document.getElementById('shotTrajectoryLine');
+  const shotEndDot = document.getElementById('shotEndDot');
+  const shotClickHint = document.getElementById('shotClickHint');
+  const coordDisplay = document.getElementById('coordDisplay');
+  const logBtn = document.getElementById('logBtn');
+  const formNote = document.getElementById('formNote');
+  const exportBtn = document.getElementById('exportBtn');
+  const countPill = document.getElementById('countPill');
+  const tableBody = document.getElementById('eventTableBody');
+  const halfEl = document.getElementById('half');
+  const attackDirectionEl = document.getElementById('attackDirection');
+  const directionIndicator = document.getElementById('directionIndicator');
+  const goalGrid = document.getElementById('goalGrid');
+  const placementDisplay = document.getElementById('placementDisplay');
+  const placementHighlight = document.getElementById('placementHighlight');
+  const placementHighlightRect = document.getElementById('placementHighlightRect');
+  const startingXIInput = document.getElementById('startingXIInput');
+  const onFieldDisplay = document.getElementById('onFieldDisplay');
+
+  let currentCoord = null;      // {x, y} shot/event origin, normalized so team attacks toward x=105
+  let currentShotEnd = null;    // {x, y} shot end point, same normalization (shots only)
+  let currentPlacement = null;  // string label from the goal-mouth grid, e.g. "Mid Center"
+  let events = [];              // in-memory log
+  let idCounter = 1;
+  let onFieldRoster = new Set();
+  let menHome = 11;   // recomputed from the event log, so removing a card row undoes it
+  let menAway = 11;
+
+  function fieldVal(id){ return document.getElementById(id).value.trim(); }
+
+  const DISMISSAL_OUTCOMES = ['Second Yellow', 'Red'];  // these send the player off, no replacement allowed
+  function isDismissal(ev){ return ev.eventType === 'Card' && DISMISSAL_OUTCOMES.includes(ev.outcome); }
+
+  // ---------- attacking direction ----------
+  // No assumption about which way either half starts (coin toss decides
+  // that) -- changing Half just toggles to the OPPOSITE of whatever was
+  // selected before, since the two halves always go opposite ways,
+  // whichever those directions happen to be.
+  halfEl.addEventListener('change', function(){
+    attackDirectionEl.value = (attackDirectionEl.value === 'right') ? 'left' : 'right';
+    updateDirectionIndicator();
+  });
+  attackDirectionEl.addEventListener('change', updateDirectionIndicator);
+
+  function isFlipped(){ return attackDirectionEl.value === 'left'; }
+
+  function updateDirectionIndicator(){
+    directionIndicator.textContent = isFlipped()
+      ? "Your team attacks: ← (toward screen left)"
+      : "Your team attacks: → (toward screen right)";
+  }
+  updateDirectionIndicator();
+
+  // ---------- event type / substitution UI ----------
+  function isLocationRequired(){
+    const t = eventTypeEl.value;
+    return t !== 'Substitution' && t !== 'Card';
+  }
+
+  function isDismissalSelected(){
+    return eventTypeEl.value === 'Card' && DISMISSAL_OUTCOMES.includes(outcomeEl.value);
+  }
+
+  function toggleSubstitutionUI(){
+    const type = eventTypeEl.value;
+    const isSub = type === 'Substitution';
+    const isCard = type === 'Card';
+    outcomeField.style.display = isSub ? 'none' : '';
+    playerLabel.textContent = isSub ? 'Player OFF #' : (isCard ? 'Player carded #' : 'Player #');
+    if(isSub){
+      secondPlayerLabel.innerHTML = 'Player ON # <span style="font-weight:400;">(required)</span>';
+    } else if(isCard){
+      secondPlayerLabel.innerHTML = 'Player fouled # <span style="font-weight:400;">(optional)</span>';
+    } else {
+      secondPlayerLabel.innerHTML = '2nd player # <span style="font-weight:400;">(optional)</span>';
+    }
+    playerInput.placeholder = isSub ? 'e.g. 9 (leave blank for a starter)' : 'e.g. 7';
+    secondPlayerInput.placeholder = isSub ? 'e.g. 14' : (isCard ? 'who was fouled' : 'receiver / tackler / etc.');
+  }
+
+  function refreshOutcomeOptions(){
+    const type = eventTypeEl.value;
+    const opts = outcomeOptions[type] || ["Successful","Unsuccessful"];
+    outcomeEl.innerHTML = opts.map((o, idx) => `<option value="${o}">${o} (${idx+1})</option>`).join('');
+    shotFields.style.display = (type === "Shot") ? "block" : "none";
+  }
+
+  function resetAllMarkers(){
+    currentCoord = null;
+    currentShotEnd = null;
+    currentPlacement = null;
+    markerGroup.style.display = 'none';
+    shotEndGroup.style.display = 'none';
+    placementHighlight.style.display = 'none';
+    placementDisplay.textContent = 'not set';
+    updateCoordDisplay();
+    updateLogButtonState();
+    updateShotClickHint();
+  }
+
+  eventTypeEl.addEventListener('change', function(){
+    refreshOutcomeOptions();
+    toggleSubstitutionUI();
+    resetAllMarkers();
+  });
+  refreshOutcomeOptions();
+  toggleSubstitutionUI();
+
+  // ---------- log button / form note ----------
+  function updateLogButtonState(){
+    const type = eventTypeEl.value;
+    if(type === 'Card'){
+      const hasPlayer = fieldVal('player').length > 0;
+      const needsMinute = isDismissalSelected();
+      const hasMinute = fieldVal('minute').length > 0;
+      const ok = hasPlayer && (!needsMinute || hasMinute);
+      logBtn.disabled = !ok;
+      if(!hasPlayer){
+        formNote.textContent = 'Enter the number of the player who got the card.';
+      } else if(needsMinute && !hasMinute){
+        formNote.textContent = 'A sent-off card needs the minute \u2014 type the clock reading in the box at the top.';
+      } else if(needsMinute){
+        formNote.textContent = 'Ready \u2014 this logs a dismissal; that team plays a player short from here.';
+      } else {
+        formNote.textContent = 'Ready to log this yellow card.';
+      }
+    } else if(type === 'Substitution'){
+      const ok = fieldVal('secondPlayer').length > 0;
+      logBtn.disabled = !ok;
+      formNote.textContent = ok
+        ? "Ready to log this substitution."
+        : 'Enter the player # coming ON to enable logging.';
+    } else {
+      logBtn.disabled = !currentCoord;
+      formNote.textContent = currentCoord
+        ? "Ready — fill in details above, then log the event."
+        : "Click a spot on the pitch to enable logging.";
+    }
+  }
+  playerInput.addEventListener('input', updateLogButtonState);
+  secondPlayerInput.addEventListener('input', updateLogButtonState);
+  outcomeEl.addEventListener('change', updateLogButtonState);
+  document.getElementById('minute').addEventListener('input', updateLogButtonState);
+
+  // ---------- shot click-stage hint ----------
+  function updateShotClickHint(){
+    if(eventTypeEl.value !== 'Shot'){ shotClickHint.style.display = 'none'; return; }
+    shotClickHint.style.display = 'block';
+    if(!currentCoord){
+      shotClickHint.textContent = 'Click 1 of 2: mark where the shot was taken from.';
+    } else if(!currentShotEnd){
+      shotClickHint.textContent = 'Click 2 of 2 (optional): mark where it ended up, to draw the trajectory line. Click "Clear" or click a 3rd time to start a new shot without an end point.';
+    } else {
+      shotClickHint.textContent = 'Origin and end point both set ✓ — click again anywhere to start a new shot.';
+    }
+  }
+
+  // ---------- coordinate display ----------
+  function updateCoordDisplay(){
+    if(!currentCoord){ coordDisplay.textContent = 'not set'; return; }
+    let text = `x:${currentCoord.x}m, y:${currentCoord.y}m`;
+    if(isFlipped()) text += ' (normalized)';
+    if(eventTypeEl.value === 'Shot' && currentShotEnd){
+      text += ` → end x:${currentShotEnd.x}m, y:${currentShotEnd.y}m`;
+    }
+    coordDisplay.textContent = text;
+  }
+
+  // ---------- main pitch click ----------
+  svg.addEventListener('click', function(e){
+    const rect = svg.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    const relY = (e.clientY - rect.top) / rect.height;
+    const rawX = Math.round(relX * 105 * 10) / 10;
+    const rawY = Math.round(relY * 68 * 10) / 10;
+    const flipped = isFlipped();
+    const normX = flipped ? Math.round((105 - rawX) * 10) / 10 : rawX;
+    const normY = rawY;
+
+    const isShotType = eventTypeEl.value === 'Shot';
+
+    if(isShotType && currentCoord && !currentShotEnd){
+      // second click on a shot: mark the end point + draw the trajectory line
+      currentShotEnd = {x: normX, y: normY};
+      shotEndGroup.style.display = 'block';
+      shotEndDot.setAttribute('cx', rawX.toFixed(1));
+      shotEndDot.setAttribute('cy', rawY.toFixed(1));
+      shotTrajectoryLine.setAttribute('x1', markerDot.getAttribute('cx'));
+      shotTrajectoryLine.setAttribute('y1', markerDot.getAttribute('cy'));
+      shotTrajectoryLine.setAttribute('x2', rawX.toFixed(1));
+      shotTrajectoryLine.setAttribute('y2', rawY.toFixed(1));
+    } else {
+      // first click, a non-shot click, or the 3rd click restarting a shot
+      currentCoord = {x: normX, y: normY};
+      currentShotEnd = null;
+      shotEndGroup.style.display = 'none';
+      markerGroup.style.display = 'block';
+      markerDot.setAttribute('cx', rawX.toFixed(1));
+      markerDot.setAttribute('cy', rawY.toFixed(1));
+    }
+
+    updateCoordDisplay();
+    updateLogButtonState();
+    updateShotClickHint();
+  });
+
+  document.getElementById('clearMarker').addEventListener('click', function(){
+    currentCoord = null;
+    currentShotEnd = null;
+    markerGroup.style.display = 'none';
+    shotEndGroup.style.display = 'none';
+    updateCoordDisplay();
+    updateLogButtonState();
+    updateShotClickHint();
+  });
+
+  // ---------- goal-mouth placement grid ----------
+  function classifyGoalZone(clickX, clickY){
+    if(clickX < 20) return {label:'Wide Left', x:0, y:0, w:20, h:95};
+    if(clickX > 120) return {label:'Wide Right', x:120, y:0, w:20, h:95};
+    if(clickY < 25) return {label:'Over the Bar', x:20, y:0, w:100, h:25};
+    const colBounds = [20, 53.3, 86.7, 120];
+    const rowBounds = [25, 48.3, 71.7, 95];
+    let col = 0; while(col < 2 && clickX > colBounds[col+1]) col++;
+    let row = 0; while(row < 2 && clickY > rowBounds[row+1]) row++;
+    const colNames = ['Left','Center','Right'];
+    const rowNames = ['Top','Mid','Low'];
+    return {
+      label: rowNames[row] + ' ' + colNames[col],
+      x: colBounds[col], y: rowBounds[row],
+      w: colBounds[col+1]-colBounds[col], h: rowBounds[row+1]-rowBounds[row]
+    };
+  }
+
+  goalGrid.addEventListener('click', function(e){
+    const rect = goalGrid.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    const relY = (e.clientY - rect.top) / rect.height;
+    const clickX = relX * 140;
+    const clickY = relY * 95;
+    const zone = classifyGoalZone(clickX, clickY);
+    currentPlacement = zone.label;
+    placementDisplay.textContent = zone.label;
+    placementHighlightRect.setAttribute('x', zone.x);
+    placementHighlightRect.setAttribute('y', zone.y);
+    placementHighlightRect.setAttribute('width', zone.w);
+    placementHighlightRect.setAttribute('height', zone.h);
+    placementHighlight.style.display = 'block';
+  });
+
+  document.getElementById('clearPlacement').addEventListener('click', function(){
+    currentPlacement = null;
+    placementDisplay.textContent = 'not set';
+    placementHighlight.style.display = 'none';
+  });
+
+  // ---------- starting XI ----------
+  function updateOnFieldDisplay(){
+    onFieldDisplay.textContent = onFieldRoster.size ? Array.from(onFieldRoster).join(', ') : 'none set';
+    const menEl = document.getElementById('menOnField');
+    menEl.textContent = `Us ${menHome} \u00b7 Them ${menAway}`;
+    menEl.className = (menHome !== 11 || menAway !== 11) ? 'men-warn' : '';
+  }
+
+  // Replays the whole log in order, so deleting any row (a sub, a card)
+  // correctly undoes its effect instead of leaving stale state behind.
+  function recomputeRoster(){
+    const roster = new Set();
+    let homeOut = 0, awayOut = 0;
+    events.forEach(function(ev){
+      if(ev.team === 'Home'){
+        if(ev.eventType === 'Substitution'){
+          if(ev.player) roster.delete(ev.player);
+          if(ev.secondPlayer) roster.add(ev.secondPlayer);
+        } else if(isDismissal(ev)){
+          roster.delete(ev.player);
+          homeOut++;
+        }
+      } else if(ev.team === 'Away' && isDismissal(ev)){
+        awayOut++;
+      }
+    });
+    onFieldRoster = roster;
+    menHome = 11 - homeOut;
+    menAway = 11 - awayOut;
+    updateOnFieldDisplay();
+  }
+
+  document.getElementById('addStartingXIBtn').addEventListener('click', function(){
+    const nums = startingXIInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    if(nums.length === 0) return;
+    nums.forEach(function(num){
+      events.push({
+        id: idCounter++,
+        opponent: fieldVal('opponent'), date: fieldVal('gameDate'),
+        half: '1', minute: '0', team: 'Home',   // starters are always our team, whatever the team dropdown says
+        player: '', eventType: 'Substitution', outcome: '',
+        secondPlayer: num, x: '', y: '', shotEndX: '', shotEndY: '', shotPlacement: '',
+        bodyPart: '', shotType: '', assistType: '', pressure: ''
+      });
+    });
+    renderTable();
+    startingXIInput.value = '';
+  });
+
+  // ---------- log event ----------
+  logBtn.addEventListener('click', function(){
+    const type = eventTypeEl.value;
+    if(isLocationRequired() && !currentCoord) return;
+    const isShot = type === "Shot";
+    const isSub = type === "Substitution";
+
+    const row = {
+      id: idCounter++,
+      opponent: fieldVal('opponent'),
+      date: fieldVal('gameDate'),
+      half: fieldVal('half'),
+      minute: fieldVal('minute'),
+      team: fieldVal('team'),
+      player: fieldVal('player'),
+      eventType: type,
+      outcome: isSub ? "" : outcomeEl.value,
+      secondPlayer: fieldVal('secondPlayer'),
+      x: currentCoord ? currentCoord.x : "",
+      y: currentCoord ? currentCoord.y : "",
+      shotEndX: (isShot && currentShotEnd) ? currentShotEnd.x : "",
+      shotEndY: (isShot && currentShotEnd) ? currentShotEnd.y : "",
+      shotPlacement: isShot ? (currentPlacement || "") : "",
+      bodyPart: isShot ? fieldVal('bodyPart') : "",
+      shotType: isShot ? fieldVal('shotType') : "",
+      assistType: isShot ? fieldVal('assistType') : "",
+      pressure: isShot ? fieldVal('pressure') : ""
+    };
+    events.push(row);
+
+    renderTable();   // also recomputes who's on the field and men-on-field from the full log
+
+    // reset per-event state; keep team/event type/half for fast repeat logging
+    currentCoord = null;
+    currentShotEnd = null;
+    currentPlacement = null;
+    markerGroup.style.display = "none";
+    shotEndGroup.style.display = "none";
+    placementHighlight.style.display = "none";
+    placementDisplay.textContent = "not set";
+    updateCoordDisplay();
+    playerInput.value = "";
+    secondPlayerInput.value = "";
+    playerInput.blur();
+    secondPlayerInput.blur();
+    updateLogButtonState();
+    updateShotClickHint();
+  });
+
+  function renderTable(){
+    recomputeRoster();
+    countPill.textContent = events.length;
+    exportBtn.disabled = events.length === 0;
+    if(events.length === 0){
+      tableBody.innerHTML = `<tr class="empty-row"><td colspan="18">No events logged yet — click the pitch and fill in the form to add your first one.</td></tr>`;
+      return;
+    }
+    tableBody.innerHTML = events.map((ev, i) => {
+      let outcomeClass = ev.outcome === "Goal" ? "tag-goal" : (ev.eventType === "Shot" ? "tag-shot" : "");
+      if(ev.eventType === "Card"){
+        outcomeClass = (ev.outcome === "Yellow") ? "tag-yellow" : "tag-red";
+      }
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${ev.half}</td>
+        <td>${ev.minute}</td>
+        <td>${ev.team}</td>
+        <td>${ev.player}</td>
+        <td>${ev.eventType}</td>
+        <td class="${outcomeClass}">${ev.outcome}</td>
+        <td>${ev.secondPlayer}</td>
+        <td>${ev.x}</td>
+        <td>${ev.y}</td>
+        <td>${ev.shotEndX}</td>
+        <td>${ev.shotEndY}</td>
+        <td>${ev.shotPlacement}</td>
+        <td>${ev.bodyPart}</td>
+        <td>${ev.shotType}</td>
+        <td>${ev.assistType}</td>
+        <td>${ev.pressure}</td>
+        <td><button class="del-btn" data-id="${ev.id}">Remove</button></td>
+      </tr>`;
+    }).join('');
+
+    tableBody.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', function(){
+        const id = parseInt(this.getAttribute('data-id'));
+        events = events.filter(ev => ev.id !== id);
+        renderTable();
+      });
+    });
+  }
+
+  function toCSVValue(v){
+    const s = (v === undefined || v === null) ? "" : String(v);
+    if(s.includes(',') || s.includes('"') || s.includes('\n')){
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  exportBtn.addEventListener('click', function(){
+    const headers = ["opponent","date","half","minute","team","player","eventType","outcome","secondPlayer","x","y","shotEndX","shotEndY","shotPlacement","bodyPart","shotType","assistType","pressure"];
+    const lines = [headers.join(',')];
+    events.forEach(ev => {
+      lines.push(headers.map(h => toCSVValue(ev[h])).join(','));
+    });
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const opp = fieldVal('opponent').replace(/[^a-z0-9]/gi, '_') || 'game';
+    const dt = fieldVal('gameDate') || 'undated';
+    a.href = url;
+    a.download = `match_events_${opp}_${dt}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  updateLogButtonState();
+  updateShotClickHint();
+
+  // ---------- keyboard shortcuts ----------
+  // Only fire when focus is NOT in a text input/select, so normal typing
+  // (opponent name, jersey numbers) is never hijacked.
+  const EVENT_TYPE_SHORTCUTS = {
+    p: 'Pass', s: 'Shot', d: 'Dribble/Carry', c: 'Cross', t: 'Tackle',
+    i: 'Interception', l: 'Clearance', v: 'Save', f: 'Foul', r: 'Corner',
+    h: 'Throw-in', k: 'Goal Kick', u: 'Substitution', y: 'Card'
+  };
+
+  function isTypingField(){
+    const tag = document.activeElement.tagName;
+    return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  }
+
+  document.addEventListener('keydown', function(e){
+    if(isTypingField()) return; // let normal typing / native dropdown behavior happen
+
+    const key = e.key.toLowerCase();
+
+    if(EVENT_TYPE_SHORTCUTS[key]){
+      eventTypeEl.value = EVENT_TYPE_SHORTCUTS[key];
+      eventTypeEl.dispatchEvent(new Event('change'));
+      e.preventDefault();
+      return;
+    }
+
+    if(/^[1-4]$/.test(key)){
+      const idx = parseInt(key, 10) - 1;
+      if(outcomeEl.options[idx]){
+        outcomeEl.value = outcomeEl.options[idx].value;
+        outcomeEl.dispatchEvent(new Event('change'));
+        e.preventDefault();
+      }
+      return;
+    }
+
+    if(e.key === 'Enter'){
+      playerInput.focus();
+      e.preventDefault();
+    }
+  });
+
+  // Enter in Player # advances to Player ON # for a Substitution (since
+  // that field is required there), otherwise logs the event immediately
+  // with 2nd player left blank (same as clicking Log Event).
+  playerInput.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+    e.preventDefault();
+    if(eventTypeEl.value === 'Substitution'){
+      secondPlayerInput.focus();
+    } else if(!logBtn.disabled){
+      logBtn.click();
+    }
+  });
+
+  secondPlayerInput.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+    e.preventDefault();
+    if(!logBtn.disabled){
+      logBtn.click();
+    }
+  });
+
+  // ---------- countdown clock -> elapsed minute ----------
+  // Each half is a 40-minute countdown (not one continuous 80-minute
+  // clock), so elapsed time in half 2 = 40 + (40 - clock shown), not just
+  // (40 - clock shown) again.
+  const clockReadingInput = document.getElementById('clockReading');
+
+  function updateMinuteFromClock(){
+    const val = clockReadingInput.value.trim();
+    const match = val.match(/^(\d{1,2}):(\d{2})$/);
+    if(!match) return; // not a complete mm:ss yet -- leave minute field alone
+    const mm = parseInt(match[1], 10);
+    const ss = parseInt(match[2], 10);
+    if(mm > 40 || ss > 59) return; // not a valid 40:00-based countdown reading
+
+    const clockDecimalMinutes = mm + ss / 60;
+    const elapsedInHalf = Math.max(0, Math.min(40, 40 - clockDecimalMinutes));
+    const halfOffset = (halfEl.value === '2') ? 40 : 0;
+    const totalElapsed = Math.round((halfOffset + elapsedInHalf) * 10) / 10;
+    document.getElementById('minute').value = totalElapsed;
+    updateLogButtonState();
+  }
+
+  clockReadingInput.addEventListener('input', updateMinuteFromClock);
+</script>
+</body>
+</html>
+
